@@ -7,6 +7,46 @@ import (
 	"strings"
 )
 
+type cliCommand struct {
+	name        string
+	description string
+	callback    func() error
+}
+
+var cmdList map[string]cliCommand
+
+func startRepl() {
+	cmdList = make(map[string]cliCommand, 0)
+	addCommand("exit", "Exit the Pokedex", commandExit)
+	addCommand("help", "Displays a help message", commandHelp)
+
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Print("Pokedex > ")
+
+	for scanner.Scan() {
+		words := cleanInput(scanner.Text())
+		if len(words) == 0 {
+			fmt.Print("Pokedex > ")
+			continue
+		}
+		commandName := words[0]
+		switch commandName {
+		case "exit":
+			_ = cmdList["exit"].callback()
+		case "help":
+			_ = cmdList["help"].callback()
+		default:
+			fmt.Println("Unknown command")
+		}
+		fmt.Print("Pokedex > ")
+	}
+
+	fmt.Println()
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "Error reading input:", err)
+	}
+}
+
 func cleanInput(text string) []string {
 	strSlice := strings.Fields(text)
 	for i, str := range strSlice {
@@ -15,29 +55,26 @@ func cleanInput(text string) []string {
 	return strSlice
 }
 
-func startRepl() {
-	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Print("Pokedex > ")
-
-	// scanner.Scan() 会阻塞等待输入，直到读取到下一个 token（换行符）
-	// 当遇到 EOF（如按下 Ctrl+D）或错误时，它会返回 false 并退出循环
-	for scanner.Scan() {
-		words := cleanInput(scanner.Text())
-
-		// 如果只输入了空格或直接按回车
-		if len(words) == 0 {
-			fmt.Print("Pokedex > ")
-			continue
-		}
-		commandName := words[0]
-		fmt.Printf("Your command was: %s\n", commandName)
-		fmt.Print("Pokedex > ")
+func addCommand(name, desc string, callback func() error) {
+	cmdList[name] = cliCommand{
+		name:        name,
+		description: desc,
+		callback:    callback,
 	}
+}
 
+func commandExit() error {
+	fmt.Println("Closing the Pokedex... Goodbye!")
+	os.Exit(0)
+	return nil
+}
+
+func commandHelp() error {
+	fmt.Println("Welcome to the Pokedex!")
+	fmt.Println("Usage")
 	fmt.Println()
-
-	// 循环结束后检查是否发生了非 EOF 的 I/O 错误
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "Error reading input:", err)
+	for _, cmd := range cmdList {
+		fmt.Printf("%s: %s\n", cmd.name, cmd.description)
 	}
+	return nil
 }
