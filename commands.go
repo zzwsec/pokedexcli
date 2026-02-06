@@ -24,7 +24,7 @@ func commandHelp(cfg *config) error {
 }
 
 func commandMap(cfg *config) error {
-	resp, err := pokeapi.GetLocationAreas(cfg.nextURL)
+	resp, err := pokeapi.GetLocationAreas(cfg.nextURL, &cfg.cache)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func commandMapB(cfg *config) error {
 		return nil
 	}
 
-	resp, err := pokeapi.GetLocationAreas(cfg.previousURL)
+	resp, err := pokeapi.GetLocationAreas(cfg.previousURL, &cfg.cache)
 	if err != nil {
 		return err
 	}

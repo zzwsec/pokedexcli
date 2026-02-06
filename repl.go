@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/zzwsec/pokedexcli/internal/pokecache"
 )
 
 type config struct {
 	nextURL     *string
 	previousURL *string
+	cache       pokecache.Cache
 }
 
 type cliCommand struct {
@@ -22,7 +26,9 @@ var cmdList map[string]cliCommand
 
 func startRepl() {
 	cmdList = make(map[string]cliCommand, 0)
-	cfg := &config{}
+	cfg := &config{
+		cache: pokecache.NewCache(time.Second * 5),
+	}
 	addCommand("exit", "Exit the Pokedex", commandExit)
 	addCommand("help", "Displays a help message", commandHelp)
 	addCommand("map", "Displays the next 20 locations", commandMap)
