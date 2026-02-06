@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/zzwsec/pokedexcli/internal/pokeapi"
 )
 
 func commandExit(cfg *config) error {
@@ -24,7 +22,7 @@ func commandHelp(cfg *config) error {
 }
 
 func commandMap(cfg *config) error {
-	resp, err := pokeapi.GetLocationAreas(cfg.nextURL, &cfg.cache)
+	resp, err := cfg.pokeapiClient.GetLocationAreas(cfg.nextURL)
 	if err != nil {
 		return err
 	}
@@ -37,13 +35,12 @@ func commandMap(cfg *config) error {
 }
 
 func commandMapB(cfg *config) error {
-	// 检查是否在第一页
 	if cfg.previousURL == nil {
 		fmt.Println("you're on the first page")
 		return nil
 	}
 
-	resp, err := pokeapi.GetLocationAreas(cfg.previousURL, &cfg.cache)
+	resp, err := cfg.pokeapiClient.GetLocationAreas(cfg.previousURL)
 	if err != nil {
 		return err
 	}

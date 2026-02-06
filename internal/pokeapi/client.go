@@ -6,68 +6,71 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/zzwsec/pokedexcli/internal/pokecache"
 )
 
-func GetLocationAreas(pageURL *string, cache *pokecache.Cache) (*LocationAreasResponse, error) {
+func NewClient(timeout, cacheInterval time.Duration) Client {
+	return Client{
+		cache: pokecache.NewCache(cacheInterval),
+		httpClient: http.Client{
+			Timeout: timeout,
+		},
+	}
+}
+
+func (c *Client) GetLocationAreas(pageURL *string) (LocationAreasResponse, error) {
 	url := "https://pokeapi.co/api/v2/location-area?offset=0&limit=20"
 	if pageURL != nil {
 		url = *pageURL
 	}
 	cacheKey, err := normalizeURL(url)
 	if err != nil {
-		cacheKey = url // 如果标准化失败,使用原始URL
+		cacheKey = url
 	}
-	// fmt.Printf("\n[DEBUG] Original URL: %s\n", url)
-	// fmt.Printf("[DEBUG] Cache key: %s\n", cacheKey)
 
-	// 尝试从缓存获取数据
-	if cacheData, ok := cache.Get(cacheKey); ok {
-		las := &LocationAreasResponse{}
-		if err := json.Unmarshal(cacheData, las); err == nil {
-			// fmt.Printf("[DEBUG] ✅ CACHE HIT! Using cached data\n")
+	if cacheData, ok := c.cache.Get(cacheKey); ok {
+		las := LocationAreasResponse{}
+		if err := json.Unmarshal(cacheData, &las); err == nil {
 			return las, nil
 		}
 	}
 
-	// fmt.Printf("[DEBUG] ❌ CACHE MISS - Fetching from API...\n")
-	// 缓存未命中或解析失败则发起http请求
-	resp, err := http.Get(cacheKey)
+	req, err := http.NewRequest("GET", cacheKey, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error making request: %w", err)
+		return LocationAreasResponse{}, err
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return LocationAreasResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return LocationAreasResponse{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return LocationAreasResponse{}, err
 	}
-	las := &LocationAreasResponse{}
-	err = json.Unmarshal(data, las)
+	las := LocationAreasResponse{}
+	err = json.Unmarshal(data, &las)
 	if err != nil {
-		return nil, fmt.Errorf("JSON parsing failed: %w", err)
+		return LocationAreasResponse{}, fmt.Errorf("JSON parsing failed: %w", err)
 	}
 
-	// 添加缓存
-	cache.Add(cacheKey, data)
+	c.cache.Add(cacheKey, data)
 	return las, nil
 }
 
-// 标准化URL,确保参数顺序一致
 func normalizeURL(rawURL string) (string, error) {
-	// 解析URL字符串为结构体
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err
 	}
-	// 提取查询参数
 	params := u.Query()
-	// 重新编码查询参数
 	u.RawQuery = params.Encode()
 	return u.String(), nil
 }

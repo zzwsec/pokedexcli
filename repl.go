@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
-	"github.com/zzwsec/pokedexcli/internal/pokecache"
+	"github.com/zzwsec/pokedexcli/internal/pokeapi"
 )
 
 type config struct {
-	nextURL     *string
-	previousURL *string
-	cache       pokecache.Cache
+	nextURL       *string
+	previousURL   *string
+	pokeapiClient pokeapi.Client
 }
 
 type cliCommand struct {
@@ -24,11 +23,8 @@ type cliCommand struct {
 
 var cmdList map[string]cliCommand
 
-func startRepl() {
+func startRepl(cfg *config) {
 	cmdList = make(map[string]cliCommand, 0)
-	cfg := &config{
-		cache: pokecache.NewCache(time.Second * 5),
-	}
 	addCommand("exit", "Exit the Pokedex", commandExit)
 	addCommand("help", "Displays a help message", commandHelp)
 	addCommand("map", "Displays the next 20 locations", commandMap)
@@ -44,17 +40,15 @@ func startRepl() {
 			continue
 		}
 		commandName := words[0]
-		switch commandName {
-		case "exit":
-			_ = cmdList["exit"].callback(cfg)
-		case "help":
-			_ = cmdList["help"].callback(cfg)
-		case "map":
-			_ = cmdList["map"].callback(cfg)
-		case "mapb":
-			_ = cmdList["mapb"].callback(cfg)
-		default:
+		cmd, exists := cmdList[commandName]
+		if !exists {
 			fmt.Println("Unknown command")
+			fmt.Print("Pokedex > ")
+			continue
+		}
+		err := cmd.callback(cfg)
+		if err != nil {
+			fmt.Println("Error:", err)
 		}
 		fmt.Print("Pokedex > ")
 	}
@@ -66,11 +60,9 @@ func startRepl() {
 }
 
 func cleanInput(text string) []string {
-	strSlice := strings.Fields(text)
-	for i, str := range strSlice {
-		strSlice[i] = strings.ToLower(str)
-	}
-	return strSlice
+	out := strings.ToLower(text)
+	words := strings.Fields(out)
+	return words
 }
 
 func addCommand(name, desc string, callback func(*config) error) {
