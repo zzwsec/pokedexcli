@@ -13,6 +13,7 @@ type config struct {
 	nextURL       *string
 	previousURL   *string
 	pokeapiClient pokeapi.Client
+	args          []string
 }
 
 type cliCommand struct {
@@ -29,6 +30,7 @@ func startRepl(cfg *config) {
 	addCommand("help", "Displays a help message", commandHelp)
 	addCommand("map", "Displays the next 20 locations", commandMap)
 	addCommand("mapb", "Displays the prev 20 locations", commandMapB)
+	addCommand("explore", "Explore a location", commandExplore)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Pokedex > ")
@@ -40,6 +42,7 @@ func startRepl(cfg *config) {
 			continue
 		}
 		commandName := words[0]
+		cfg.args = words[1:]
 		cmd, exists := cmdList[commandName]
 		if !exists {
 			fmt.Println("Unknown command")

@@ -51,3 +51,25 @@ func commandMapB(cfg *config) error {
 	}
 	return nil
 }
+
+func commandExplore(cfg *config) error {
+	orgUrl := "https://pokeapi.co/api/v2/location-area"
+
+	if len(cfg.args) != 1 {
+		return fmt.Errorf("Please provide a location area name or id")
+	}
+	resp, err := cfg.pokeapiClient.GetLocationPokemon(&orgUrl, &cfg.args[0])
+	if err != nil {
+		return err
+	}
+	if resp.Name == "" {
+		fmt.Printf("Invalid location\n")
+		return nil
+	}
+	fmt.Printf("Exploring %s...\n", resp.Name)
+	fmt.Printf("Found Pokemon:\n")
+	for _, pe := range resp.PokemonEncounters {
+		fmt.Printf("  - %s\n", pe.Pokemon.Name)
+	}
+	return nil
+}
