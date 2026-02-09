@@ -120,3 +120,16 @@ func commandInspect(cfg *config) error {
 	}
 	return nil
 }
+
+func commandPokedex(cfg *config) error {
+	pokemons := cfg.pokedex.List()
+	if len(pokemons) == 0 {
+		fmt.Printf("Your Pokedex is empty, go catch pokemon quickly!\n")
+		return nil
+	}
+	fmt.Printf("Your Pokedex:\n")
+	for name := range pokemons {
+		fmt.Printf("  -%v\n", name)
+	}
+	return nil
+}

@@ -64,3 +64,13 @@ func (p *Pokedex) Set(pp Pokemon) {
 	defer p.mu.Unlock()
 	p.pkg[pp.Name] = pp
 }
+
+func (p *Pokedex) List() map[string]Pokemon {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	out := make(map[string]Pokemon, len(p.pkg))
+	for k, v := range p.pkg {
+		out[k] = v
+	}
+	return out
+}

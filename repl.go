@@ -33,7 +33,8 @@ func startRepl(cfg *config) {
 	addCommand("mapb", "Displays the prev 20 locations", commandMapB)
 	addCommand("explore", "Explore a location", commandExplore)
 	addCommand("catch", "Try catch pokemon", commandCatch)
-	addCommand("inspect", "show pokemon detail", commandInspect)
+	addCommand("inspect", "Show pokemon detail", commandInspect)
+	addCommand("pokedex", "List of all the names of the Pokemon", commandPokedex)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Pokedex > ")
