@@ -7,34 +7,13 @@ import (
 	"github.com/zzwsec/pokedexcli/internal/pokecache"
 )
 
-type LocationAreasResponse struct {
-	Count    int                `json:"count"`
-	Next     *string            `json:"next"`
-	Previous *string            `json:"previous"`
-	Results  []LocationAreaItem `json:"results"`
-}
-
-type LocationAreaItem struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
-}
+const (
+	baseURL = "https://pokeapi.co/api/v2"
+)
 
 type Client struct {
 	cache      pokecache.Cache
 	httpClient http.Client
-}
-
-type AreaDetail struct {
-	PokemonEncounters []PokemonDetail `json:"pokemon_encounters"`
-	ID                int             `json:"id"`
-	Name              string          `json:"name"`
-}
-
-type PokemonDetail struct {
-	Pokemon struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"pokemon"`
 }
 
 type Pokedex struct {
@@ -42,7 +21,69 @@ type Pokedex struct {
 	mu  *sync.RWMutex
 }
 
+type LocationAreasResponse struct {
+	Count    int     `json:"count"`
+	Next     *string `json:"next"`
+	Previous *string `json:"previous"`
+	Results  []struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"results"`
+}
+
+type AreaDetail struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Location struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"location"`
+	PokemonEncounters []struct {
+		Pokemon struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"pokemon"`
+	} `json:"pokemon_encounters"`
+	Names []struct {
+		Language struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"language"`
+		Name string `json:"name"`
+	} `json:"names"`
+}
+
 type Pokemon struct {
-	BaseExperience int    `json:"base_experience"`
-	Name           string `json:"name"`
+	BaseExperience         int    `json:"base_experience"`
+	Weight                 int    `json:"weight"`
+	Height                 int    `json:"height"`
+	Name                   string `json:"name"`
+	LocationAreaEncounters string `json:"location_area_encounters"`
+	Cries                  struct {
+		Latest string `json:"latest"`
+		Legacy string `json:"legacy"`
+	} `json:"cries"`
+	Abilities []struct {
+		Ability struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"ability"`
+		IsHidden bool `json:"is_hidden"`
+		Slot     int  `json:"slot"`
+	} `json:"abilities"`
+	Types []struct {
+		Slot int `json:"slot"`
+		Type struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"type"`
+	} `json:"types"`
+	Stats []struct {
+		BaseStat int `json:"base_stat"`
+		Effort   int `json:"effort"`
+		Stat     struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"stat"`
+	} `json:"stats"`
 }

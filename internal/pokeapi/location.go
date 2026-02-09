@@ -4,20 +4,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/rand"
 	"net/http"
 	"net/url"
-	"time"
 )
 
 func (c *Client) GetLocationAreas(pageURL *string) (LocationAreasResponse, error) {
-	url := "https://pokeapi.co/api/v2/location-area?offset=0&limit=20"
-	if pageURL != nil {
-		url = *pageURL
-	}
-	cacheKey, err := normalizeURL(url)
+	result, err := url.JoinPath(baseURL, "location-area")
 	if err != nil {
-		cacheKey = url
+		return LocationAreasResponse{}, err
+	}
+
+	u, err := url.Parse(result)
+	if err != nil {
+		return LocationAreasResponse{}, err
+	}
+
+	q := u.Query()
+	q.Set("offset", "0")
+	q.Set("limit", "20")
+	u.RawQuery = q.Encode()
+	finalURL := u.String()
+
+	if pageURL != nil {
+		finalURL = *pageURL
+	}
+	cacheKey, err := normalizeURL(finalURL)
+	if err != nil {
+		cacheKey = finalURL
 	}
 
 	if cacheData, ok := c.cache.Get(cacheKey); ok {
@@ -55,13 +68,12 @@ func (c *Client) GetLocationAreas(pageURL *string) (LocationAreasResponse, error
 	return las, nil
 }
 
-func (c *Client) GetLocationPokemon(baseUrl, params *string) (AreaDetail, error) {
-	orgUrl := "https://pokeapi.co/api/v2/location-area"
-	if baseUrl != nil {
-		orgUrl = *baseUrl
+func (c *Client) GetLocationPokemon(params *string) (AreaDetail, error) {
+	fixUrl, err := url.JoinPath(baseURL, "location-area", *params)
+	if err != nil {
+		return AreaDetail{}, err
 	}
 
-	fixUrl, _ := url.JoinPath(orgUrl, *params)
 	fmt.Printf("[DEBUG] Cache key: %s\n", fixUrl)
 	if cacheData, ok := c.cache.Get(fixUrl); ok {
 		ad := AreaDetail{}
@@ -98,48 +110,4 @@ func (c *Client) GetLocationPokemon(baseUrl, params *string) (AreaDetail, error)
 
 	c.cache.Add(fixUrl, data)
 	return ad, nil
-}
-
-func (c *Client) CatchPokemon(pkg *Pokedex, baseUrl, params string) (bool, error) {
-	reqUrl := "https://pokeapi.co/api/v2/pokemon/"
-	if baseUrl != "" {
-		reqUrl = baseUrl
-	}
-	u, err := url.JoinPath(reqUrl, params)
-	if err != nil {
-		return false, err
-	}
-
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return false, err
-	}
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return false, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return false, err
-	}
-
-	p := Pokemon{}
-	if err := json.NewDecoder(resp.Body).Decode(&p); err != nil {
-		return false, err
-	}
-
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	exp := p.BaseExperience
-	if exp < 1 {
-		exp = 1
-	}
-	roll := r.Intn(exp + 1)
-	if roll < 40 {
-		pkg.mu.Lock()
-		pkg.pkg[p.Name] = p
-		pkg.mu.Unlock()
-		return true, nil
-	}
-	return false, nil
 }

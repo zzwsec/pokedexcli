@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
+	"time"
 )
 
 func commandExit(cfg *config) error {
@@ -53,12 +55,10 @@ func commandMapB(cfg *config) error {
 }
 
 func commandExplore(cfg *config) error {
-	orgUrl := "https://pokeapi.co/api/v2/location-area"
-
 	if len(cfg.args) != 1 {
 		return fmt.Errorf("Please provide a location area name or id")
 	}
-	resp, err := cfg.pokeapiClient.GetLocationPokemon(&orgUrl, &cfg.args[0])
+	resp, err := cfg.pokeapiClient.GetLocationPokemon(&cfg.args[0])
 	if err != nil {
 		return err
 	}
@@ -75,23 +75,48 @@ func commandExplore(cfg *config) error {
 }
 
 func commandCatch(cfg *config) error {
-	orgUrl := "https://pokeapi.co/api/v2/pokemon/"
-
 	if len(cfg.args) != 1 {
 		return fmt.Errorf("Please provide a pokemon name or id")
 	}
 
 	fmt.Printf("Throwing a Pokeball at %s\n", cfg.args[0])
-	ok, err := cfg.pokeapiClient.CatchPokemon(&cfg.pokedex, orgUrl, cfg.args[0])
+	p, err := cfg.pokeapiClient.CatchPokemon(cfg.args[0])
 	if err != nil {
 		return err
 	}
 
-	if !ok {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	res := r.Intn(p.BaseExperience)
+
+	if res > 40 {
 		fmt.Printf("%s escaped!\n", cfg.args[0])
 		return nil
 	}
 
 	fmt.Printf("%s was caught!\n", cfg.args[0])
+	cfg.pokedex.Set(p)
+	return nil
+}
+
+func commandInspect(cfg *config) error {
+	if len(cfg.args) != 1 {
+		return fmt.Errorf("Please provide a pokemon name")
+	}
+	info, exist := cfg.pokedex.Get(cfg.args[0])
+	if !exist {
+		fmt.Printf("you have not caught that pokemon\n")
+		return nil
+	}
+	fmt.Printf("Name: %v\n", info.Name)
+	fmt.Printf("Height: %v\n", info.Height)
+	fmt.Printf("Weight: %v\n", info.Weight)
+	fmt.Printf("Stats:\n")
+	for _, s := range info.Stats {
+		fmt.Printf("  -%v: %v\n", s.Stat.Name, s.BaseStat)
+	}
+	fmt.Printf("Types:\n")
+	for _, t := range info.Types {
+		fmt.Printf("  - %v\n", t.Type.Name)
+	}
 	return nil
 }
