@@ -73,3 +73,25 @@ func commandExplore(cfg *config) error {
 	}
 	return nil
 }
+
+func commandCatch(cfg *config) error {
+	orgUrl := "https://pokeapi.co/api/v2/pokemon/"
+
+	if len(cfg.args) != 1 {
+		return fmt.Errorf("Please provide a pokemon name or id")
+	}
+
+	fmt.Printf("Throwing a Pokeball at %s\n", cfg.args[0])
+	ok, err := cfg.pokeapiClient.CatchPokemon(&cfg.pokedex, orgUrl, cfg.args[0])
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		fmt.Printf("%s escaped!\n", cfg.args[0])
+		return nil
+	}
+
+	fmt.Printf("%s was caught!\n", cfg.args[0])
+	return nil
+}

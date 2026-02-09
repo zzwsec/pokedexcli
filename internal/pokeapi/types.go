@@ -2,6 +2,7 @@ package pokeapi
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/zzwsec/pokedexcli/internal/pokecache"
 )
@@ -34,4 +35,14 @@ type PokemonDetail struct {
 		Name string `json:"name"`
 		URL  string `json:"url"`
 	} `json:"pokemon"`
+}
+
+type Pokedex struct {
+	pkg map[string]Pokemon
+	mu  *sync.RWMutex
+}
+
+type Pokemon struct {
+	BaseExperience int    `json:"base_experience"`
+	Name           string `json:"name"`
 }

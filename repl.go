@@ -12,8 +12,9 @@ import (
 type config struct {
 	nextURL       *string
 	previousURL   *string
-	pokeapiClient pokeapi.Client
 	args          []string
+	pokeapiClient pokeapi.Client
+	pokedex       pokeapi.Pokedex
 }
 
 type cliCommand struct {
@@ -31,6 +32,7 @@ func startRepl(cfg *config) {
 	addCommand("map", "Displays the next 20 locations", commandMap)
 	addCommand("mapb", "Displays the prev 20 locations", commandMapB)
 	addCommand("explore", "Explore a location", commandExplore)
+	addCommand("catch", "Try catch pokemon", commandCatch)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Pokedex > ")

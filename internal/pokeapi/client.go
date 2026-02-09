@@ -3,6 +3,7 @@ package pokeapi
 import (
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/zzwsec/pokedexcli/internal/pokecache"
@@ -14,6 +15,13 @@ func NewClient(timeout, cacheInterval time.Duration) Client {
 		httpClient: http.Client{
 			Timeout: timeout,
 		},
+	}
+}
+
+func NewPokedex() Pokedex {
+	return Pokedex{
+		pkg: make(map[string]Pokemon),
+		mu:  &sync.RWMutex{},
 	}
 }
 
